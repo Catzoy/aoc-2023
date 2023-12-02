@@ -26,12 +26,16 @@ fun main() {
             }
             gameId to scores
         }
-        .filter { (_, scores) ->
-            scores.all { (red, green, blue) ->
-                red <= 12 && green <= 13 && blue <= 14
-            }
+        .map { (gameId, scores) ->
+            val redMax = scores.maxOf { (red, _, _) -> red }
+            val greenMax = scores.maxOf { (_, green, _) -> green }
+            val blueMax = scores.maxOf { (_, _, blue) -> blue }
+            gameId to Triple(redMax, greenMax, blueMax)
         }
-        .sumOf { (gameId, _) -> gameId }
+        .sumOf { (_, colors) ->
+            val (redMax, greenMax, blueMax) = colors
+            redMax * greenMax * blueMax
+        }
 
     print(result)
 }
