@@ -51,13 +51,13 @@ humidity-to-location map:
     val humidityToLocationMap = iterator.readNumbers().foldRespectiveMap()
 
     val locations = seeds.map { seed ->
-        val soil = seedToSoilMap.getOrDefault(seed, seed)
-        val fertilizer = soilToFertilizerMap.getOrDefault(soil, soil)
-        val water = fertilizerToWaterMap.getOrDefault(fertilizer, fertilizer)
-        val light = waterToLightMap.getOrDefault(water, water)
-        val temperature = lightToTemperatureMap.getOrDefault(light, light)
-        val humidity = temperatureToHumidityMap.getOrDefault(temperature, temperature)
-        humidityToLocationMap.getOrDefault(humidity, humidity)
+        val soil = seedToSoilMap.getBy(seed, seed)
+        val fertilizer = soilToFertilizerMap.getBy(soil, soil)
+        val water = fertilizerToWaterMap.getBy(fertilizer, fertilizer)
+        val light = waterToLightMap.getBy(water, water)
+        val temperature = lightToTemperatureMap.getBy(light, light)
+        val humidity = temperatureToHumidityMap.getBy(temperature, temperature)
+        humidityToLocationMap.getBy(humidity, humidity)
     }
 
     println(locations.min())
@@ -78,14 +78,14 @@ fun Iterator<String>.readNumbers(): List<List<Long>> {
     return result
 }
 
-fun List<List<Long>>.foldRespectiveMap(): Map<LongRange, LongRange> {
+private fun List<List<Long>>.foldRespectiveMap(): Map<LongRange, LongRange> {
     return fold(mutableMapOf()) { acc, (first, second, len) ->
         acc[second..<(second + len)] = first..(first + len)
         acc
     }
 }
 
-fun Map<LongRange, LongRange>.getOrDefault(value: Long, default: Long): Long {
+private fun Map<LongRange, LongRange>.getBy(value: Long, default: Long): Long {
     return entries.firstOrNull { (range, _) -> value in range }
         ?.let { (range, mapped) -> mapped.first + (value - range.first) }
         ?: default
