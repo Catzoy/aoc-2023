@@ -1,17 +1,20 @@
 package day7
 
 
-const val ordering1 = "AKQJT98765432"
+const val ordering2 = "AKQT98765432J"
 
-fun String.compareByOrdering1To(other: String): Int {
+private fun String.compareByOrdering2To(other: String): Int {
     return this.zip(other)
         .first { (a, b) -> a != b }
-        .let { (a, b) -> ordering1.indexOf(b).compareTo(ordering1.indexOf(a)) }
+        .let { (a, b) -> ordering2.indexOf(b).compareTo(ordering2.indexOf(a)) }
 }
 
-sealed interface Type1 : Comparable<Type1> {
+val Map<Char, Int>.exceptJokers: Map<Char, Int>
+    get() = filterKeys { it != 'J' }
+
+sealed interface Type2 : Comparable<Type2> {
     companion object {
-        fun parse(value: String): Type1 {
+        fun parse(value: String): Type2 {
             val counts = value.groupingBy { it }.eachCount()
             if (FiveKind.satisfies(counts)) return FiveKind(value)
             if (FourKind.satisfies(counts)) return FourKind(value)
@@ -25,19 +28,27 @@ sealed interface Type1 : Comparable<Type1> {
 
     val value: String
 
-    override fun compareTo(other: Type1): Int {
-        return value.compareByOrdering1To(other.value)
+    override fun compareTo(other: Type2): Int {
+        return value.compareByOrdering2To(other.value)
     }
 
-    data class FiveKind(override val value: String) : Type1 {
+    data class FiveKind(override val value: String) : Type2 {
 
         companion object {
+
+            private fun isMadeWithJokers(counts: Map<Char, Int>): Boolean {
+                val jCount = counts['J'] ?: return false
+                if (jCount == 5) return false
+                if (counts.size != 2) return false
+                return counts.exceptJokers.values.single() == (5 - jCount)
+            }
+
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                return counts.values.singleOrNull { it == 5 } != null
+                return isMadeWithJokers(counts) || Type1.FiveKind.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is FiveKind -> super.compareTo(other)
                 else -> 1
@@ -45,15 +56,21 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class FourKind(override val value: String) : Type1 {
+    data class FourKind(override val value: String) : Type2 {
 
         companion object {
+
+            private fun isMadeWithJokers(counts: Map<Char, Int>): Boolean {
+                val jCount = counts['J'] ?: return false
+                return counts.exceptJokers.values.any { it == (4 - jCount) }
+            }
+
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                return counts.values.singleOrNull { it == 4 } != null
+                return isMadeWithJokers(counts) || Type1.FourKind.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is FiveKind -> -1
                 is FourKind -> super.compareTo(other)
@@ -62,17 +79,23 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class FullHouse(override val value: String) : Type1 {
+    data class FullHouse(override val value: String) : Type2 {
 
         companion object {
+
+            private fun isMadeWithJokers(counts: Map<Char, Int>): Boolean {
+                if (counts['J'] != 1) return false
+                if (counts.size != 3) return false
+                val (a, b) = counts.exceptJokers.values.toList()
+                return a == 2 && b == 2
+            }
+
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                if (counts.size != 2) return false
-                val (a, b) = counts.values.toList()
-                return (a == 2 && b == 3) || (a == 3 && b == 2)
+                return isMadeWithJokers(counts) || Type1.FullHouse.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is FiveKind,
                 is FourKind -> -1
@@ -83,15 +106,21 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class ThreeKind(override val value: String) : Type1 {
+    data class ThreeKind(override val value: String) : Type2 {
 
         companion object {
+
+            private fun isMadeWithJokers(counts: Map<Char, Int>): Boolean {
+                val jCount = counts['J'] ?: return false
+                return counts.exceptJokers.values.any { it == (3 - jCount) }
+            }
+
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                return counts.values.singleOrNull { it == 3 } != null
+                return isMadeWithJokers(counts) || Type1.ThreeKind.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is FiveKind,
                 is FourKind,
@@ -103,15 +132,16 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class TwoPair(override val value: String) : Type1 {
+    data class TwoPair(override val value: String) : Type2 {
 
         companion object {
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                return counts.values.count { it == 2 } == 2
+                // No way to incorporate Jokers here
+                return Type1.TwoPair.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is OnePair,
                 is HighCard -> 1
@@ -122,15 +152,15 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class OnePair(override val value: String) : Type1 {
+    data class OnePair(override val value: String) : Type2 {
 
         companion object {
             fun satisfies(counts: Map<Char, Int>): Boolean {
-                return counts.values.singleOrNull { it == 2 } != null
+                return counts['J'] == 1 || Type1.OnePair.satisfies(counts)
             }
         }
 
-        override fun compareTo(other: Type1): Int {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is OnePair -> super.compareTo(other)
                 is HighCard -> 1
@@ -139,8 +169,8 @@ sealed interface Type1 : Comparable<Type1> {
         }
     }
 
-    data class HighCard(override val value: String) : Type1 {
-        override fun compareTo(other: Type1): Int {
+    data class HighCard(override val value: String) : Type2 {
+        override fun compareTo(other: Type2): Int {
             return when (other) {
                 is HighCard -> super.compareTo(other)
                 else -> -1
@@ -151,17 +181,17 @@ sealed interface Type1 : Comparable<Type1> {
 
 fun main() {
     val input = """
-32T3K 765
-T55J5 684
-KK677 28
-KTJJT 220
-QQQJA 483
-""".trimIndent()
+        32T3K 765
+        T55J5 684
+        KK677 28
+        KTJJT 220
+        QQQJA 483
+    """.trimIndent()
 
     val result = input.lineSequence()
         .map { line ->
             val (cards, value) = line.split(" ")
-            val type = Type1.parse(cards)
+            val type = Type2.parse(cards)
             type to value.toInt()
         }
         .sortedWith { pair1, pair2 ->
