@@ -132,7 +132,7 @@ enum class Tile(val sign: Char) {
 }
 
 
-fun findPaths(point: Point, lines: List<List<Tile>>): Pair<Point, Point> {
+private fun findPaths(point: Point, lines: List<List<Tile>>): Pair<Point, Point> {
     fun Point.isConnected(direction: Direction): Boolean {
         val (x, y) = this
         if (y < 0 || y >= lines.size) {
