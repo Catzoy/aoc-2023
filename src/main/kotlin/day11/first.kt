@@ -17,8 +17,8 @@ fun main() {
     """.trimIndent()
         .lines()
         .map { it.toMutableList() }
-        .expandHorizontally()
-        .expandVertically()
+        .expandHorizontallyBy()
+        .expandVerticallyBy()
 
     val galaxies = input.withIndex().flatMap { (y, line) ->
         line.withIndex().filter { (_, c) -> c == '#' }.map { (x, _) -> x to y }
@@ -41,7 +41,7 @@ fun main() {
     println(distances)
 }
 
-fun List<List<Char>>.expandHorizontally(): List<List<Char>> {
+fun List<List<Char>>.expandHorizontallyBy(): List<List<Char>> {
     var width = first().size
     val accum = map { it.toMutableList() }.toMutableList()
     var i = 0
@@ -59,7 +59,7 @@ fun List<List<Char>>.expandHorizontally(): List<List<Char>> {
     return accum
 }
 
-fun List<List<Char>>.expandVertically(): List<List<Char>> {
+fun List<List<Char>>.expandVerticallyBy(): List<List<Char>> {
     var height = size
     val accum = map { it.toMutableList() }.toMutableList()
     var i = 0
